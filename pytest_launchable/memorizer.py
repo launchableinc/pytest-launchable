@@ -5,8 +5,9 @@
 
 def memorizer(f):
     func_to_value = {}
+
     def w(*args):
-        if f in func_to_value: # cache hit
+        if f in func_to_value:  # cache hit
             return func_to_value[f]
         else:
             v = f(*args)
