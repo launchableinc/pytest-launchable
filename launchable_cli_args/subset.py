@@ -1,6 +1,6 @@
 from functools import reduce
-from .error_counter import ErrorCounter
 
+from launchable_cli_args.error_counter import ErrorCounter
 
 class SubsetArgs:
     REST_FILE_NAME = "launchable_rest_file.txt"

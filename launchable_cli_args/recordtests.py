@@ -1,4 +1,4 @@
-from .error_counter import ErrorCounter
+from launchable_cli_args.error_counter import ErrorCounter
 
 
 class RecordTestsArgs:
