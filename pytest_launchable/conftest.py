@@ -13,6 +13,7 @@ from lxml import etree
 lc: Optional["LaunchableTestContext"] = None
 cli: Optional[CLIArgs] = None
 
+TestNameList = Tuple[Optional[str], str, Optional[str]]
 
 class LaunchableTestContext:
     def __init__(self):
@@ -61,8 +62,8 @@ class LaunchableTestContext:
             node.collect_testpath_list(r)
         return r
 
-    def to_name_tuple_list(self) -> Tuple[str, str, str]:
-        r: Tuple[str, str, str] = []
+    def to_name_tuple_list(self) -> List[str]:
+        r: List[str] = []
         for node in self.test_node_list:
             node.collect_name_tuple_list(r)
         return r
@@ -89,7 +90,7 @@ class LaunchableTestNode:
         # array of the contents passed in pytest_collection_modifyitems()
         self.case_list: List[LaunchableTestCase] = []
 
-    def add_test_case(self, pytest_item: pytest.Function, test_name_tuple: Tuple[Optional[str], str, Optional[str]]):
+    def add_test_case(self, pytest_item: pytest.Function, test_name_tuple: TestNameList):
         self.case_list.append(LaunchableTestCase(
             self, pytest_item, test_name_tuple))
 
@@ -106,11 +107,11 @@ class LaunchableTestNode:
         for testcase in self.case_list:
             testcase.collect_testpath_list(array)
 
-    def collect_name_tuple_list(self, array):
+    def collect_name_tuple_list(self, array: List[str]):
         for testcase in self.case_list:
             array.append(str(testcase.test_name_tuple))
 
-    def collect_pytest_items(self, category_name, items):
+    def collect_pytest_items(self, category_name: str, items: List[pytest.Function]):
         for testcase in self.case_list:
             testcase.launchable_subset_category = category_name
             items.append(testcase.pytest_item)
@@ -121,7 +122,7 @@ class LaunchableTestNode:
 
 
 class LaunchableTestCase:
-    def __init__(self, parent_node: "LaunchableTestNode", pytest_item: pytest.Function, test_name_tuple: Tuple[Optional[str], str, Optional[str]]):
+    def __init__(self, parent_node: "LaunchableTestNode", pytest_item: pytest.Function, test_name_tuple: TestNameList):
         self.parent_node = parent_node
         self.pytest_item = pytest_item  # in unit test, this may be None
         self.test_name_tuple = test_name_tuple
@@ -384,7 +385,7 @@ def pytest_sessionfinish(session):
     subprocess.run(record_test_command)
 
 
-def parse_pytest_item(testcase: pytest.Function) -> Tuple[Optional[str], str, Optional[str]]:
+def parse_pytest_item(testcase: pytest.Function) -> TestNameList:
     class_name: Optional[str] = None
     parameters: Optional[str] = None
     function_name = testcase.originalname
