@@ -12,7 +12,6 @@ def test_configure_and_parse() -> None:
     os.remove(test_conf_file_path)
 
     assert args.source_object["__fullpath__"].endswith(test_conf_file_path)
-
     assert args.error_counter.error_count == 2, "git repository problem and LAUNCHABLE_TOKEN warnings should be detected"
     args.error_counter.print_errors()
 
