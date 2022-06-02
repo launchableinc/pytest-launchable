@@ -285,13 +285,14 @@ def init_launchable_test_context(items: List[pytest.Function]) -> "LaunchableTes
 def pytest_collection_modifyitems(config, items: List[pytest.Function]) -> None:
     if lc is None:
         raise Exception("launchable test context is not initialized")
-    if cli is None:
-        raise Exception("cli args is not initialized")
 
     if not lc.enabled:
         return
 
     init_launchable_test_context(items)
+
+    if cli is None:
+        raise Exception("cli args is not initialized")
 
     # call subset
     # file_list = lc.to_file_list()
