@@ -1,5 +1,6 @@
+from yaml2obj.writer import YamlWriter
 
-from .error_counter import ErrorCounter
+from launchable_cli_args.error_counter import ErrorCounter
 
 
 class RecordSessionArgs:
@@ -9,6 +10,9 @@ class RecordSessionArgs:
     def fill_and_validate(self, data: dict, error_counter: ErrorCounter):
         # record-session section is can be empty
         return 0
+
+    def write_to(self, writer: YamlWriter):
+        return
 
     def to_command(self):
         return ("launchable", "record", "session", "--build", self.parent.eval_build_id())

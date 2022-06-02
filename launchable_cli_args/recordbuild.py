@@ -1,4 +1,5 @@
 import os
+from yaml2obj.writer import YamlWriter
 
 from launchable_cli_args.error_counter import ErrorCounter
 
@@ -21,6 +22,11 @@ class RecordBuildArgs:
                 data, "source", verify_source, error_counter)
             self.max_days = self.parent.check_int_field(
                 data, "max_days", 30, error_counter)
+
+    def write_to(self, writer: YamlWriter):
+        writer.comment("Put your git repository location here")
+        writer.name("source").value(self.source)
+        writer.name("max_days").value(self.max_days)
 
     def to_command(self):
         a = ("launchable", "record", "build", "--name",

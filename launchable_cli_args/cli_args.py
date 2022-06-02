@@ -1,6 +1,10 @@
 import os
 import subprocess
 from typing import Callable
+
+from yaml2obj.loader import YamlLoaderWithLineNumber
+from yaml2obj.writer import YamlWriter
+
 from launchable_cli_args.error_counter import ErrorCounter
 from launchable_cli_args.recordbuild import RecordBuildArgs
 from launchable_cli_args.recordsession import RecordSessionArgs
@@ -36,6 +40,35 @@ class CLIArgs:
         self.subset.fill_and_validate(data.get("subset", None), error_counter)
         self.record_tests.fill_and_validate(
             data.get("record-tests", None), error_counter)
+
+    def write_to(self, writer: YamlWriter):
+        writer.comment("Launchable test session configuration file")
+        writer.comment(
+            "See https://docs.launchableinc.com/resources/cli-reference for detailed usage of these options")
+        writer.comment(" ")
+
+        writer.name("schema-version").value("1.0")
+        writer.name("build-id").value(self.build_id)
+
+        writer.name("record-build").begin_object()
+        self.record_build.write_to(writer)
+        writer.end_object()
+
+        writer.name("record-session").begin_object()
+        self.record_session.write_to(writer)
+        writer.end_object()
+
+        writer.name("subset").begin_object()
+        self.subset.write_to(writer)
+        writer.end_object()
+
+        writer.name("record-tests").begin_object()
+        self.record_tests.write_to(writer)
+        writer.end_object()
+
+    def write_as_yaml(self, path: str):
+        with open(path, 'w') as s:
+            self.write_to(YamlWriter(s))
 
     # read value from dictionary and verify the content.
     # if error is not found, return the value itself
@@ -84,6 +117,15 @@ class CLIArgs:
             else:
                 self.cached_build_id = self.build_id
         return self.cached_build_id
+
+    # target_dir is the test files location path, specified at test execution.
+    # for example, the unit test command is 'pytest <test_path>', target_dir is <test_path>
+    @classmethod
+    def from_yaml(cls, path: str, target_dir=None) -> "CLIArgs":
+        args = CLIArgs()
+        args.fill_and_validate(YamlLoaderWithLineNumber.from_file(path))
+        args.target_dir = target_dir
+        return args
 
     @classmethod
     def auto_configure(cls, path: str) -> "CLIArgs":
