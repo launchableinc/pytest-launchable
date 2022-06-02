@@ -1,5 +1,6 @@
 import os
 import subprocess
+from typing import Callable
 from launchable_cli_args.error_counter import ErrorCounter
 from launchable_cli_args.recordbuild import RecordBuildArgs
 from launchable_cli_args.recordsession import RecordSessionArgs
@@ -39,7 +40,7 @@ class CLIArgs:
     # read value from dictionary and verify the content.
     # if error is not found, return the value itself
     # else, print error message with line number information and return None
-    def check_mandatory_field(self, data: dict, key: str, verifier: callable, error_counter: ErrorCounter):
+    def check_mandatory_field(self, data: dict, key: str, verifier: Callable, error_counter: ErrorCounter):
         value = data.get(key)
         line_info = data["__line__"]
         if value is None:

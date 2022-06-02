@@ -9,7 +9,8 @@ def f():
 
 class T:
     """empty method on class T"""
-    def m():
+
+    def m(self):
         return None
 
 

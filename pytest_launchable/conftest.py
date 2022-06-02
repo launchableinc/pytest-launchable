@@ -2,14 +2,16 @@ import subprocess
 import re
 import os
 from typing import List, Optional, Tuple, Union
+
+import pytest
 from .memorizer import memorizer
 from launchable_cli_args import CLIArgs
 from lxml.builder import E
 from lxml import etree
 
 # global scope test session LaunchableTestContext
-lc = None
-cli = None
+lc: Optional["LaunchableTestContext"] = None
+cli: Optional[CLIArgs] = None
 
 
 class LaunchableTestContext:
@@ -18,7 +20,7 @@ class LaunchableTestContext:
         self.init()
 
     def init(self) -> None:
-        self.test_node_list = []
+        self.test_node_list: List[LaunchableTestNode] = []
 
     def get_node_from_path(self, path: str) -> "LaunchableTestNode":
         for node in self.test_node_list:
@@ -42,32 +44,32 @@ class LaunchableTestContext:
         self.subset_command = command
         self.subset_input = input_files
 
-    def set_subset_command_response(self, raw_subset: str, rest_file: Optional[List[str]] = None) -> None:
+    def set_subset_command_response(self, raw_subset: str, rest_file: Optional[str] = None) -> None:
         self.raw_subset = raw_subset
         self.raw_rest = read_test_path_list_file(
             rest_file) if rest_file is not None else None
         self.subset_list = format_test_path_list(self.raw_subset)
         self.rest_list = format_test_path_list(
-            self.raw_rest) if rest_file is not None else None
+            self.raw_rest) if rest_file is not None and self.raw_rest is not None else None
 
     def to_file_list(self) -> List[str]:
         return list(map(lambda n: n.path, self.test_node_list))
 
     def to_testpath_list(self) -> List[str]:
-        r = []
+        r: List[str] = []
         for node in self.test_node_list:
             node.collect_testpath_list(r)
         return r
 
     def to_name_tuple_list(self) -> Tuple[str, str, str]:
-        r = []
+        r: Tuple[str, str, str] = []
         for node in self.test_node_list:
             node.collect_name_tuple_list(r)
         return r
 
     # <class 'lxml.etree._Element'>  is this annotation "Element" correct?
-    def junit_xml(self) -> "Element":
-        array = []
+    def junit_xml(self) -> etree._Element:
+        array: List = []
         for node in self.test_node_list:
             node.collect_junit_element(array)
         launchable_extra = {'launchable_subset_command': " ".join(self.subset_command),  # command is tuple
@@ -87,7 +89,7 @@ class LaunchableTestNode:
         # array of the contents passed in pytest_collection_modifyitems()
         self.case_list: List[LaunchableTestCase] = []
 
-    def add_test_case(self, pytest_item: "Function", test_name_tuple: Tuple[str, str, str]):
+    def add_test_case(self, pytest_item: pytest.Function, test_name_tuple: Tuple[Optional[str], str, Optional[str]]):
         self.case_list.append(LaunchableTestCase(
             self, pytest_item, test_name_tuple))
 
@@ -119,13 +121,13 @@ class LaunchableTestNode:
 
 
 class LaunchableTestCase:
-    def __init__(self, parent_node: "LaunchableTestNode", pytest_item: "Function", test_name_tuple: Tuple[str, str, str]):
+    def __init__(self, parent_node: "LaunchableTestNode", pytest_item: pytest.Function, test_name_tuple: Tuple[Optional[str], str, Optional[str]]):
         self.parent_node = parent_node
         self.pytest_item = pytest_item  # in unit test, this may be None
         self.test_name_tuple = test_name_tuple
-        self.class_name = test_name_tuple[0]  # optional
+        self.class_name: Optional[str] = test_name_tuple[0]  # optional
         self.function_name = test_name_tuple[1]  # mandatory
-        self.parameters = test_name_tuple[2]  # optional
+        self.parameters: Optional[str] = test_name_tuple[2]  # optional
         self.function_name_and_parameters = self.function_name
         if self.parameters is not None:
             # then 'function_name[0-1]' style
@@ -172,7 +174,7 @@ class LaunchableTestCase:
             launchable_test_path = "file=%s#class=%s#testcase=%s" % (
                 self.parent_node.path, self.class_name, output_function_name)
 
-        content: str = ""
+        content: Union[etree._Element, str] = ""
         message: str = ""
         if self.call_result.outcome == 'failed':
             message = ""
@@ -255,17 +257,21 @@ def pytest_configure(config) -> None:
         subprocess.run(cli.record_session.to_command())
 
 
-def init_launchable_test_context(items: List["Function"]) -> "LaunchableTestContext":
+def init_launchable_test_context(items: List[pytest.Function]) -> "LaunchableTestContext":
+    if lc is None:
+        raise Exception("launchable test context is not initialized")
+
     lc.init()
     for testcase in items:
-        lc_node = None
+        lc_node: Optional[LaunchableTestNode] = None
         # keywords is defined in pytest class NodeKeywords
         for k in testcase.keywords:
             # we got parameters as fllowing key: pytestmark [Mark(name='parametrize', args=('x', [1.0, 0.0]), kwargs={})]
             if is_pytest_test_file(k):
                 lc_node = lc.get_node_from_path(k)
         test_names = parse_pytest_item(testcase)
-        lc_node.add_test_case(testcase, test_names)
+        if lc_node is not None:
+            lc_node.add_test_case(testcase, test_names)
     return lc
 
 # called for each test file... this hook can be used to collect full path of tests
@@ -276,7 +282,12 @@ def init_launchable_test_context(items: List["Function"]) -> "LaunchableTestCont
 # we get a chance of reordering or subsetting at this point
 
 
-def pytest_collection_modifyitems(config, items: List["Function"]) -> None:
+def pytest_collection_modifyitems(config, items: List[pytest.Function]) -> None:
+    if lc is None:
+        raise Exception("launchable test context is not initialized")
+    if cli is None:
+        raise Exception("cli args is not initialized")
+
     if not lc.enabled:
         return
 
@@ -309,9 +320,12 @@ def pytest_collection_modifyitems(config, items: List["Function"]) -> None:
 
     # find testcase , mark category name, and return pytest object
     def find_and_mark(testpath: str, category: str):
+        if lc is None:
+            raise Exception("launchable test context is not initialized")
+
         testcase = lc.find_testcase_from_testpath(testpath)
         if testcase is None:
-            raise ("testpath %s not found" % testpath)
+            raise Exception("testpath %s not found" % testpath)
         testcase.launchable_subset_category = category
         return testcase.pytest_item
 
@@ -351,6 +365,9 @@ def pytest_runtest_logreport(report):
 
 
 def pytest_sessionfinish(session):
+    if lc is None:
+        raise Exception("launchable test context is not initialized")
+
     if not lc.enabled:
         return
     if not os.path.exists(cli.record_tests.result_dir):
@@ -366,9 +383,9 @@ def pytest_sessionfinish(session):
     subprocess.run(record_test_command)
 
 
-def parse_pytest_item(testcase: "Function") -> Tuple[str, str, str]:
-    class_name = None
-    parameters = None
+def parse_pytest_item(testcase: pytest.Function) -> Tuple[Optional[str], str, Optional[str]]:
+    class_name: Optional[str] = None
+    parameters: Optional[str] = None
     function_name = testcase.originalname
     # _obj is function(belonging to a file) or method(belonging to a class). this is determined by checking it has __self__
     if hasattr(testcase._obj, "__self__"):
