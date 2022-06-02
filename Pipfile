@@ -14,10 +14,10 @@ flake8 = "*"
 wheel = "*"
 setuptools = "*"
 setuptools-scm = "*"
-types-lxml = "*"
+lxml-stubs = "*"
 
 [requires]
-python_version = "3.9"
+python_version = "3.7"
 
 [scripts]
 test = "python -m pytest tests"
