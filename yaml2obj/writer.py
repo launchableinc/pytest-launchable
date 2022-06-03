@@ -1,13 +1,14 @@
 # write object tree to text stream as YAML format
 
 from io import TextIOWrapper
+from typing import List
 
 
 class YamlWriter:
     def __init__(self, stream: TextIOWrapper):
         self.stream = stream
         self.level = 0
-        self.array_levels = []  # memorize array
+        self.array_levels: List[int] = []  # memorize array
 
     def name(self, key: str) -> "YamlWriter":
         self.__indent()
@@ -35,7 +36,7 @@ class YamlWriter:
 
     def end_object(self) -> "YamlWriter":
         if self.level <= 0:
-            raise "level is already 0"
+            raise Exception("level is already 0")
         self.level = self.level - 1
         return self
 

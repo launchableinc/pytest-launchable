@@ -18,6 +18,7 @@ class CLIArgs:
         self.record_session = RecordSessionArgs(self)
         self.subset = SubsetArgs(self)
         self.record_tests = RecordTestsArgs(self)
+        self.target_dir: str = None
 
     # fill content and print message if necessary
     # 'data' should have line number information

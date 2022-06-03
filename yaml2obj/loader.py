@@ -1,5 +1,6 @@
 import io
 import os
+from typing import Any
 import yaml
 from yaml.loader import SafeLoader
 from yaml.composer import Composer
@@ -31,12 +32,12 @@ class YamlLoaderWithLineNumber(SafeLoader):
         return mapping
 
     @classmethod
-    def from_file(cls, path: str) -> yaml:
+    def from_file(cls, path: str) -> Any:
         with open(path) as file:
             o = yaml.load(file, Loader=YamlLoaderWithLineNumber)
             o['__fullpath__'] = os.path.abspath(path)
             return o
 
     @classmethod
-    def from_string(cls, body: str) -> yaml:
+    def from_string(cls, body: str) -> Any:
         return yaml.load(io.StringIO(body), Loader=YamlLoaderWithLineNumber)

@@ -42,7 +42,7 @@ class SubsetArgs:
         if getattr(self, "target", None) is not None:
             writer.name("target").value(self.target)
         if getattr(self, "confidence", None) is not None:
-            writer.name("confidence").value(self.tarconfidenceget)
+            writer.name("confidence").value(self.confidence)
         if getattr(self, "time", None) is not None:
             writer.name("time").value(self.time)
 
