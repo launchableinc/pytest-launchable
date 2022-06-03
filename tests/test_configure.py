@@ -3,7 +3,7 @@ from launchable_cli_args import CLIArgs
 
 
 def test_configure_and_parse() -> None:
-    test_conf_file_path = 'tests/unittest1.conf'
+    test_conf_file_path = os.path.join('tests', 'unittest1.conf')
     args = CLIArgs.auto_configure("tests")
 
     args.write_as_yaml(test_conf_file_path)
