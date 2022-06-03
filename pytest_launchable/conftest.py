@@ -6,14 +6,15 @@ from typing import List, Optional, Tuple, Union
 import pytest
 from .memorizer import memorizer
 from launchable_cli_args import CLIArgs
-from lxml.builder import E # type: ignore
-from lxml import etree # type: ignore
+from lxml.builder import E  # type: ignore
+from lxml import etree  # type: ignore
 
 # global scope test session LaunchableTestContext
 lc: Optional["LaunchableTestContext"] = None
 cli: Optional[CLIArgs] = None
 
 TestNameList = Tuple[Optional[str], str, Optional[str]]
+
 
 class LaunchableTestContext:
     def __init__(self):
