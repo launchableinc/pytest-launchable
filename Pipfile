@@ -14,7 +14,7 @@ flake8 = "*"
 wheel = "*"
 setuptools = "*"
 setuptools-scm = "*"
-lxml-stubs = "*"
+types-lxml = "*"
 types-PyYAML = "*"
 
 [requires]
