@@ -14,14 +14,14 @@ flake8 = "*"
 wheel = "*"
 setuptools = "*"
 setuptools-scm = "*"
-lxml-stubs = "*"
+types-PyYAML = "*"
 
 [requires]
 python_version = "3.7"
 
 [scripts]
 test = "python -m pytest tests"
-type = "mypy pytest_launchable tests"
+type = "mypy pytest_launchable tests yaml2obj launchable_cli_args"
 build = "python setup.py sdist bdist_wheel"
 format = "autopep8 -ivr ."
 install = "pip install -U ."

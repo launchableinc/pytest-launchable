@@ -1,3 +1,4 @@
+from yaml2obj.writer import YamlWriter
 from launchable_cli_args.error_counter import ErrorCounter
 
 
@@ -10,6 +11,10 @@ class RecordTestsArgs:
             error_counter.record("record-tests section is empty")
         else:
             self.result_dir = data.get("result_dir", None)
+
+    def write_to(self, writer: YamlWriter):
+        writer.comment("The test results are placed here in JUnit XML format")
+        writer.name("result_dir").value(self.result_dir)
 
     def to_command(self):
         return ("launchable", "record", "tests", "--build", self.parent.eval_build_id(), "pytest", self.result_dir)
