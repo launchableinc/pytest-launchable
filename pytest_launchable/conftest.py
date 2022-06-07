@@ -36,7 +36,7 @@ class LaunchableTestContext:
         @memorizer
         def testpath_re():
             return re.compile("file=(?P<file>([^#]+))(#class=(?P<class>([^#]+)))?#testcase=(?P<testcase>(.+))$")
-        m = testpath_re().match(testpath)
+        m = testpath_re().search(testpath)
         e = m.groupdict()
 
         # class is optional
@@ -201,7 +201,7 @@ def is_pytest_test_file(path: str) -> bool:
     @memorizer
     def pytest_test_file_re():
         return re.compile(".*test_.*\.py$")
-    return pytest_test_file_re().match(path)
+    return pytest_test_file_re().search(path)
 
 
 def read_test_path_list_file(filename: str) -> List[str]:
