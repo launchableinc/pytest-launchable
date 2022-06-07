@@ -44,7 +44,7 @@ class LaunchableTestContext:
         class_name = e.get("class")
 
         # class is optional
-        return self.get_node_from_path(e["file"]).find_test_case(class_name, e["testcase"]) if class_name else None
+        return self.get_node_from_path(e["file"]).find_test_case(class_name, e["testcase"])
 
     def set_subset_command_request(self, command, input_files: List[str]) -> None:
         self.subset_command = command
@@ -102,7 +102,7 @@ class LaunchableTestNode:
     def short_str(self):
         return ",".join(map(lambda c: c.short_str(), self.case_list))
 
-    def find_test_case(self, class_name: str, function_name_and_parameters: str) -> Optional["LaunchableTestCase"]:
+    def find_test_case(self, class_name: Optional[str], function_name_and_parameters: str) -> Optional["LaunchableTestCase"]:
         for testcase in self.case_list:
             if testcase.class_name == class_name and testcase.function_name_and_parameters == function_name_and_parameters:
                 return testcase
