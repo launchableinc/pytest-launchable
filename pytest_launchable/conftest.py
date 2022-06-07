@@ -4,7 +4,6 @@ import os
 from typing import List, Optional, Tuple, Union
 
 import pytest
-from .memorizer import memorizer
 from launchable_cli_args import CLIArgs
 from lxml.builder import E  # type: ignore
 from lxml import etree  # type: ignore
@@ -14,6 +13,10 @@ lc: Optional["LaunchableTestContext"] = None
 cli: Optional[CLIArgs] = None
 
 TestNameList = Tuple[Optional[str], str, Optional[str]]
+
+testpath_re = re.compile(
+    "file=(?P<file>([^#]+))(#class=(?P<class>([^#]+)))?#testcase=(?P<testcase>(.+))$")
+pytest_test_file_re = re.compile(".*test_.*\.py$")
 
 
 class LaunchableTestContext:
@@ -32,15 +35,16 @@ class LaunchableTestContext:
         self.test_node_list.append(node)
         return node
 
-    def find_testcase_from_testpath(self, testpath: str) -> "LaunchableTestCase":
-        @memorizer
-        def testpath_re():
-            return re.compile("file=(?P<file>([^#]+))(#class=(?P<class>([^#]+)))?#testcase=(?P<testcase>(.+))$")
-        m = testpath_re().match(testpath)
+    def find_testcase_from_testpath(self, testpath: str) -> Optional["LaunchableTestCase"]:
+        m = testpath_re.match(testpath)
+        if m is None:
+            return None
+
         e = m.groupdict()
+        class_name = e.get("class")
 
         # class is optional
-        return self.get_node_from_path(e["file"]).find_test_case(e.get("class"), e["testcase"])
+        return self.get_node_from_path(e["file"]).find_test_case(class_name, e["testcase"])
 
     def set_subset_command_request(self, command, input_files: List[str]) -> None:
         self.subset_command = command
@@ -98,7 +102,7 @@ class LaunchableTestNode:
     def short_str(self):
         return ",".join(map(lambda c: c.short_str(), self.case_list))
 
-    def find_test_case(self, class_name: str, function_name_and_parameters: str):
+    def find_test_case(self, class_name: Optional[str], function_name_and_parameters: str) -> Optional["LaunchableTestCase"]:
         for testcase in self.case_list:
             if testcase.class_name == class_name and testcase.function_name_and_parameters == function_name_and_parameters:
                 return testcase
@@ -198,10 +202,7 @@ class LaunchableTestCase:
 
 def is_pytest_test_file(path: str) -> bool:
     """check the path is pytest test file or not"""
-    @memorizer
-    def pytest_test_file_re():
-        return re.compile(".*test_.*\.py$")
-    return pytest_test_file_re().match(path)
+    return pytest_test_file_re.match(path) is not None
 
 
 def read_test_path_list_file(filename: str) -> List[str]:
