@@ -4,7 +4,6 @@ import os
 from typing import List, Optional, Tuple, Union
 
 import pytest
-from .memorizer import memorizer
 from launchable_cli_args import CLIArgs
 from lxml.builder import E  # type: ignore
 from lxml import etree  # type: ignore
@@ -14,6 +13,10 @@ lc: Optional["LaunchableTestContext"] = None
 cli: Optional[CLIArgs] = None
 
 TestNameList = Tuple[Optional[str], str, Optional[str]]
+
+testpath_re = re.compile(
+    "file=(?P<file>([^#]+))(#class=(?P<class>([^#]+)))?#testcase=(?P<testcase>(.+))$")
+pytest_test_file_re = re.compile(".*test_.*\.py$")
 
 
 class LaunchableTestContext:
@@ -33,10 +36,7 @@ class LaunchableTestContext:
         return node
 
     def find_testcase_from_testpath(self, testpath: str) -> "LaunchableTestCase":
-        @memorizer
-        def testpath_re():
-            return re.compile("file=(?P<file>([^#]+))(#class=(?P<class>([^#]+)))?#testcase=(?P<testcase>(.+))$")
-        m = testpath_re().match(testpath)
+        m = testpath_re.match(testpath)
         e = m.groupdict()
 
         # class is optional
@@ -198,10 +198,7 @@ class LaunchableTestCase:
 
 def is_pytest_test_file(path: str) -> bool:
     """check the path is pytest test file or not"""
-    @memorizer
-    def pytest_test_file_re():
-        return re.compile(".*test_.*\.py$")
-    return pytest_test_file_re().match(path)
+    return pytest_test_file_re.match(path)
 
 
 def read_test_path_list_file(filename: str) -> List[str]:
