@@ -1,11 +1,13 @@
 import os
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from launchable_cli_args.cli_args import CLIArgs
 from yaml2obj.writer import YamlWriter
-
 from launchable_cli_args.error_counter import ErrorCounter
 
 
 class RecordBuildArgs:
-    def __init__(self, parent):
+    def __init__(self, parent: "CLIArgs"):
         self.parent = parent
 
     def fill_and_validate(self, data: dict, error_counter: ErrorCounter):
