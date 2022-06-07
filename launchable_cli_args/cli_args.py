@@ -23,24 +23,27 @@ class CLIArgs:
     # fill content and print message if necessary
     # 'data' should have line number information
     def fill_and_validate(self, data: dict):
-        error_counter = ErrorCounter()
+        self.error_counter = ErrorCounter()
         self.source_object = data
-        self.error_counter = error_counter
         self.launchable_token = os.getenv("LAUNCHABLE_TOKEN")
         if self.launchable_token is None:
-            error_counter.record(
+            self.error_counter.record(
                 "environment variable LAUNCHABLE_TOKEN is not defined. please set it to enable Launchable features.")
         self.build_id = data.get("build-id", None)
         self.cached_build_id = None
         if self.build_id is None:
-            error_counter.record("build_id is not specified")
+            self.error_counter.record("build_id is not specified")
         self.record_build.fill_and_validate(
-            data.get("record-build", None), error_counter)
+            data.get("record-build", None), self.error_counter)
         self.record_session.fill_and_validate(
-            data.get("record-session", None), error_counter)
-        self.subset.fill_and_validate(data.get("subset", None), error_counter)
+            data.get("record-session", None), self.error_counter)
+        self.subset.fill_and_validate(
+            data.get("subset", None), self.error_counter)
         self.record_tests.fill_and_validate(
-            data.get("record-tests", None), error_counter)
+            data.get("record-tests", None), self.error_counter)
+
+        if self.error_counter.error_count > 0:
+            self.error_counter.print_errors()
 
     def write_to(self, writer: YamlWriter):
         writer.comment("Launchable test session configuration file")
