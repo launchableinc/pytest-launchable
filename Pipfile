@@ -8,7 +8,7 @@ pytest-launchable = {editable = true, path = "."}
 
 [dev-packages]
 autopep8 = "*"
-pytest = "*"
+pytest = ">= 4.2.0"
 mypy = "*"
 flake8 = "*"
 wheel = "*"
