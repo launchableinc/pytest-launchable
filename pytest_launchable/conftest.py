@@ -139,9 +139,11 @@ class LaunchableTestCase:
 
     def collect_testpath_list(self, array: List[str]):
         if self.class_name is None:
-            array.append("::".join((self.parent_node.path, self.function_name_and_parameters)))
+            array.append(
+                "::".join((self.parent_node.path, self.function_name_and_parameters)))
         else:
-            array.append("::".join((self.parent_node.path, self.class_name, self.function_name_and_parameters)))
+            array.append("::".join(
+                (self.parent_node.path, self.class_name, self.function_name_and_parameters)))
 
     def short_str(self) -> str:
         return "file=%s class=%s testcase=%s params=%s" % (self.parent_node.path, self.class_name, self.function_name, self.parameters)
