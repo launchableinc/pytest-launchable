@@ -33,14 +33,14 @@ class LaunchableTestContext:
         return node
 
     def find_testcase_from_testpath(self, testpath: str) -> "LaunchableTestCase":
-        @memorizer
-        def testpath_re():
-            return re.compile("file=(?P<file>([^#]+))(#class=(?P<class>([^#]+)))?#testcase=(?P<testcase>(.+))$")
-        m = testpath_re().search(testpath)
-        e = m.groupdict()
+        testpaths = testpath.split("::")
+        file, klass, testcase = None, None, None
+        if len(testpaths) == 3:
+            file, klass, testcase = testpaths
+        if len(testpaths) == 2:
+            file, testcase = testpaths
 
-        # class is optional
-        return self.get_node_from_path(e["file"]).find_test_case(e.get("class"), e["testcase"])
+        return self.get_node_from_path(file).find_test_case(klass, testcase)
 
     def set_subset_command_request(self, command, input_files: List[str]) -> None:
         self.subset_command = command
@@ -139,10 +139,10 @@ class LaunchableTestCase:
 
     def collect_testpath_list(self, array: List[str]):
         if self.class_name is None:
-            array.append("file=%s#testcase=%s" % (
+            array.append("%s::%s" % (
                 self.parent_node.path, self.function_name_and_parameters))
         else:
-            array.append("file=%s#class=%s#testcase=%s" % (
+            array.append("%s::%s::%s" % (
                 self.parent_node.path, self.class_name, self.function_name_and_parameters))
 
     def short_str(self) -> str:
@@ -210,22 +210,11 @@ def read_test_path_list_file(filename: str) -> List[str]:
         return [line.rstrip() for line in lines]
 
 
-def format_test_path_line(line: str) -> str:
-    """modify curious Launchable CLI output"""
-    d = line.index("::")
-    return line if d == -1 else line[0:d]
-
-
 def format_test_path_list(input: Union[List, str]) -> List[str]:
     # avoid "file::file" case. it seems to be a bug of subset command
     if not isinstance(input, list):  # both of list/string are capable
         input = input.split("\n")
-    r = []
-    for e in input:
-        e = e.strip()
-        if len(e) > 0:
-            r.append(format_test_path_line(e))
-    return r
+    return list(filter(lambda e: len(e) > 0, [e.strip() for e in input]))
 
 
 def pytest_addoption(parser):
@@ -347,8 +336,8 @@ def pytest_collection_modifyitems(config, items: List[pytest.Function]) -> None:
 # this is called 3 times (setup/call/teardown) for each test case.
 
 
-def pytest_runtest_logreport(report):
-    if not lc.enabled:
+def pytest_runtest_logreport(report: pytest.TestReport) -> None:
+    if lc is None or not lc.enabled:
         return
     # sample of nodeid: 'calc_example/math/test_mul.py::TestMul::test_mul_int1'
     ids = report.nodeid.split("::")
