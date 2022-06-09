@@ -1,12 +1,10 @@
 from functools import reduce
-from typing import TYPE_CHECKING, Literal, Optional, Tuple, Union
-if TYPE_CHECKING:
-    from launchable_cli_args.cli_args import CLIArgs
+from typing import TYPE_CHECKING, Literal, Optional
 from launchable_cli_args.error_counter import ErrorCounter
-
 from yaml2obj.writer import YamlWriter
 
-Commands = Tuple[Optional[Union[str, int]], ...]
+if TYPE_CHECKING:
+    from launchable_cli_args.cli_args import CLIArgs, Commands
 
 
 class SubsetArgs:
@@ -49,12 +47,12 @@ class SubsetArgs:
         if getattr(self, "time", None) is not None:
             writer.name("time").value(self.time)
 
-    def to_command(self) -> Commands:
+    def to_command(self) -> "Commands":
         if self.mode == "record_only":
             return ()  # subset command is not applicable
         else:
-            a: Commands = ("launchable", "subset", "--build",
-                           self.parent.eval_build_id())
+            a: "Commands" = ("launchable", "subset", "--build",
+                             self.parent.eval_build_id())
             if getattr(self, "target", None) is not None:
                 a += ("--target", self.target)
             if getattr(self, "confidence", None) is not None:

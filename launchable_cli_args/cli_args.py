@@ -1,6 +1,6 @@
 import os
 import subprocess
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple, Union
 
 from yaml2obj.loader import YamlLoaderWithLineNumber
 from yaml2obj.writer import YamlWriter
@@ -77,7 +77,7 @@ class CLIArgs:
     # read value from dictionary and verify the content.
     # if error is not found, return the value itself
     # else, print error message with line number information and return None
-    def check_mandatory_field(self, data: dict, key: str, verifier: Callable, error_counter: ErrorCounter):
+    def check_mandatory_field(self, data: dict, key: str, verifier: Callable, error_counter: ErrorCounter) -> Optional[str]:
         value = data.get(key)
         line_info = data["__line__"]
         if value is None:
@@ -150,3 +150,6 @@ def git_rev_parse(dir: str) -> str:
                        cwd=dir, stdout=subprocess.PIPE, text=True).stdout
     print("launchable build id is configured by commit hash: %s" % (h))
     return h.strip()
+
+
+Commands = Tuple[Optional[Union[str, int]], ...]

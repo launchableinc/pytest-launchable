@@ -1,9 +1,10 @@
 import os
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from launchable_cli_args.cli_args import CLIArgs
+from typing import TYPE_CHECKING, Optional
 from yaml2obj.writer import YamlWriter
 from launchable_cli_args.error_counter import ErrorCounter
+
+if TYPE_CHECKING:
+    from launchable_cli_args.cli_args import CLIArgs, Commands
 
 
 class RecordBuildArgs:
@@ -11,7 +12,7 @@ class RecordBuildArgs:
         self.parent = parent
 
     def fill_and_validate(self, data: dict, error_counter: ErrorCounter):
-        def verify_source(path):
+        def verify_source(path: str) -> Optional[str]:
             if not os.path.isdir(os.path.join(path, ".git")):
                 return "the directory '%s' must be a git repository" % path
             else:
@@ -20,7 +21,7 @@ class RecordBuildArgs:
         if data is None:
             error_counter.record("record-build section is empty")
         else:
-            self.source = self.parent.check_mandatory_field(
+            self.source: Optional[str] = self.parent.check_mandatory_field(
                 data, "source", verify_source, error_counter)
             self.max_days = self.parent.check_int_field(
                 data, "max_days", 30, error_counter)
@@ -30,9 +31,9 @@ class RecordBuildArgs:
         writer.name("source").value(self.source)
         writer.name("max_days").value(self.max_days)
 
-    def to_command(self):
-        a = ("launchable", "record", "build", "--name",
-             self.parent.eval_build_id(), "--source", self.source)
+    def to_command(self) -> "Commands":
+        a: "Commands" = ("launchable", "record", "build", "--name",
+                         self.parent.eval_build_id(), "--source", self.source)
         if self.max_days != 30:
             a += ("--max-days", str(self.max_days))
         return a
