@@ -1,5 +1,6 @@
+from typing import Callable
 import pytest
-from pytest_launchable.conftest import init_launchable_test_context, parse_pytest_item
+from pytest_launchable.conftest import PytestTestPath, init_launchable_test_context, parse_pytest_item
 
 
 def f():
@@ -17,12 +18,14 @@ class T:
 class PseudoPytest:
     """make pseudo pytest item"""
 
-    def __init__(self, file: str, name: str, func_or_method, parameters: str = None):
+    def __init__(self, file: str, name: str, func_or_method: Callable, parameters: str = None):
+        class_name = func_or_method.__self__.__class__.__name__ if hasattr( # type: ignore
+            func_or_method, "__self__") else None 
+        function = name + f'[{parameters}]' if parameters else name
         self.keywords = [file]
-        self.originalname = name
+        self.nodeid = "::".join(
+            (file, class_name, function)) if class_name else "::".join((file, function))
         self._obj = func_or_method
-        if parameters is not None:
-            self.callspec = PseudoPytest.Callspec(parameters)
 
     class Callspec:
         def __init__(self, parameters: str):
@@ -31,12 +34,12 @@ class PseudoPytest:
 
 def test_parse_pytest_item():
     """Provide only the necessary attributes."""
-    assert (None, "f", None) == parse_pytest_item(
+    assert PytestTestPath("test_a.py", None, "f", None) == parse_pytest_item(
         PseudoPytest("test_a.py", "f", f))
     t = T()
-    assert ("T", "m", None) == parse_pytest_item(
+    assert PytestTestPath("test_b.py", "T", "m", None) == parse_pytest_item(
         PseudoPytest("test_b.py", "m", t.m))
-    assert ("T", "m", "[2-3-4]") == parse_pytest_item(
+    assert PytestTestPath("test_b.py", "T", "m", "[2-3-4]") == parse_pytest_item(
         PseudoPytest("test_b.py", "m", t.m, "2-3-4"))
 
 
