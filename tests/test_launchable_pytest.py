@@ -44,8 +44,8 @@ def test_launchable_context():
     t = T()
     pytest_list = [PseudoPytest("test_a.py", "f", f), PseudoPytest(
         "test_b.py", "m", t.m), PseudoPytest("test_b.py", "m", t.m, "2-3-4")]
-    testpath_list = ["file=test_a.py#testcase=f",
-                     "file=test_b.py#class=T#testcase=m", "file=test_b.py#class=T#testcase=m[2-3-4]"]
+    testpath_list = ["test_a.py::f",
+                     "test_b.py::T::m", "test_b.py::T::m[2-3-4]"]
     lc = init_launchable_test_context(pytest_list)
     assert lc.to_testpath_list() == testpath_list
     for i in range(len(pytest_list)):
