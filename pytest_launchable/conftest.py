@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import subprocess
 import re
 import os
@@ -13,7 +14,17 @@ from lxml import etree  # type: ignore
 lc: Optional["LaunchableTestContext"] = None
 cli: Optional[CLIArgs] = None
 
-TestNameList = Tuple[Optional[str], str, Optional[str]]
+
+@dataclass
+class PytestTestPath:
+    file: str
+    class_name: Optional[str]
+    function: str
+    parameters: Optional[str]
+
+    @property
+    def fuction_parameters(self) -> str:
+        return self.function + self.parameters if self.parameters else self.function
 
 
 class LaunchableTestContext:
@@ -32,15 +43,9 @@ class LaunchableTestContext:
         self.test_node_list.append(node)
         return node
 
-    def find_testcase_from_testpath(self, testpath: str) -> "LaunchableTestCase":
-        testpaths = testpath.split("::")
-        file, klass, testcase = None, None, None
-        if len(testpaths) == 3:
-            file, klass, testcase = testpaths
-        if len(testpaths) == 2:
-            file, testcase = testpaths
-
-        return self.get_node_from_path(file).find_test_case(klass, testcase) if file and testcase else None
+    def find_testcase_from_testpath(self, nodeid: str) -> "LaunchableTestCase":
+        test_path = parse_nodeid(nodeid)
+        return self.get_node_from_path(test_path.file).find_test_case(test_path.class_name, test_path.fuction_parameters) if test_path.file and test_path.function else None
 
     def set_subset_command_request(self, command: Tuple[str], input_files: List[str]) -> None:
         self.subset_command = command
@@ -91,9 +96,9 @@ class LaunchableTestNode:
         # array of the contents passed in pytest_collection_modifyitems()
         self.case_list: List[LaunchableTestCase] = []
 
-    def add_test_case(self, pytest_item: pytest.Function, test_name_tuple: TestNameList):
+    def add_test_case(self, pytest_item: pytest.Function, test_path: PytestTestPath):
         self.case_list.append(LaunchableTestCase(
-            self, pytest_item, test_name_tuple))
+            self, pytest_item, test_path))
 
     def short_str(self):
         return ",".join(map(lambda c: c.short_str(), self.case_list))
@@ -123,17 +128,17 @@ class LaunchableTestNode:
 
 
 class LaunchableTestCase:
-    def __init__(self, parent_node: "LaunchableTestNode", pytest_item: pytest.Function, test_name_tuple: TestNameList):
+    def __init__(self, parent_node: "LaunchableTestNode", pytest_item: pytest.Function, test_path: PytestTestPath):
         self.parent_node = parent_node
         self.pytest_item = pytest_item  # in unit test, this may be None
-        self.test_name_tuple = test_name_tuple
-        self.class_name: Optional[str] = test_name_tuple[0]
-        self.function_name = test_name_tuple[1]  # mandatory
-        self.parameters: Optional[str] = test_name_tuple[2]
+        self.test_name_tuple = test_path
+        self.class_name: Optional[str] = test_path.class_name
+        self.function_name = test_path.function  # mandatory
+        self.parameters: Optional[str] = test_path.parameters
         self.function_name_and_parameters = self.function_name
-        if self.parameters is not None:
-            # then 'function_name[0-1]' style
-            self.function_name_and_parameters += self.parameters
+        # then 'function_name[0-1]' style
+        self.function_name_and_parameters = test_path.fuction_parameters
+        print(self.function_name_and_parameters)
         # this is set after calling subset service
         self.launchable_subset_category = "unknown"
 
@@ -239,7 +244,6 @@ def pytest_configure(config) -> None:
     lc = LaunchableTestContext()
     lc.enabled = True if (hasattr(config, "option")
                           and config.option.launchable) else False
-    print("config="+str(config.__class__))
 
     if lc.enabled:
         conf_file_path = config.option.launchable_conf_path
@@ -293,7 +297,6 @@ def pytest_collection_modifyitems(config, items: List[pytest.Function]) -> None:
     # file_list = list(map(lambda x: (x + "::" + x), file_list))
 
     subset_command = cli.subset.to_command()
-
     # No intervention in the original testcase collection ( "record-only" mode )
     if len(subset_command) == 0:
         return
@@ -312,22 +315,22 @@ def pytest_collection_modifyitems(config, items: List[pytest.Function]) -> None:
     #print("all collected names " + str(lc.to_name_tuple_list()))
 
     # find testcase , mark category name, and return pytest object
-    def find_and_mark(testpath: str, category: str):
+    def find_and_mark(nodeid: str, category: str):
         if lc is None:
             raise Exception("launchable test context is not initialized")
 
-        testcase = lc.find_testcase_from_testpath(testpath)
+        testcase = lc.find_testcase_from_testpath(nodeid)
         if testcase is None:
-            raise Exception("testpath %s not found" % testpath)
+            raise Exception("nodeid %s not found" % nodeid)
         testcase.launchable_subset_category = category
         return testcase.pytest_item
 
     items.clear()
-    for name in lc.subset_list:
-        items.append(find_and_mark(name, "subset"))
+    for nodeid in lc.subset_list:
+        items.append(find_and_mark(nodeid, "subset"))
     if lc.rest_list is not None:
-        for name in lc.rest_list:
-            items.append(find_and_mark(name, "rest"))
+        for nodeid in lc.rest_list:
+            items.append(find_and_mark(nodeid, "rest"))
 
 # called for each test case
 # at this stage, 'location' attribute is added to `item`
@@ -341,16 +344,13 @@ def pytest_runtest_logreport(report: "pytest.TestReport") -> None:
     if lc is None or not lc.enabled:
         return
     # sample of nodeid: 'calc_example/math/test_mul.py::TestMul::test_mul_int1'
-    ids = report.nodeid.split("::")
-    node = lc.get_node_from_path(ids[0])
-    # class_name can be empty
-    class_name = ids[1] if len(ids) == 3 else None
-    # parametrize part is in this func_name field
-    func_name = ids[2] if len(ids) == 3 else ids[1]
-    test_case = node.find_test_case(class_name, func_name)
+    test_path = parse_nodeid(report.nodeid)
+    node = lc.get_node_from_path(test_path.file)
+    test_case = node.find_test_case(
+        test_path.class_name, test_path.fuction_parameters)
     if test_case == None:
         print("result node not found class=%s func=%s" %
-              (class_name, func_name))
+              (test_path.class_name, test_path.fuction_parameters))
     else:
         test_case.set_result(report)
 
@@ -376,18 +376,8 @@ def pytest_sessionfinish(session):
     subprocess.run(record_test_command)
 
 
-def parse_pytest_item(testcase: pytest.Function) -> TestNameList:
-    class_name: Optional[str] = None
-    parameters: Optional[str] = None
-    function_name = testcase.originalname
-    # _obj is function(belonging to a file) or method(belonging to a class). this is determined by checking it has __self__
-    if hasattr(testcase._obj, "__self__"):
-        class_name = testcase._obj.__self__.__class__.__name__
-    if hasattr(testcase, "callspec"):  # only parametrized tests have 'callspec'
-        # test name in result object has paramters as [x-y-z] style
-        parameters = "["+testcase.callspec._idlist[0]+"]"
-    n = (class_name, function_name, parameters)
-    return n
+def parse_pytest_item(testcase: pytest.Function) -> PytestTestPath:
+    return parse_nodeid(testcase.nodeid)
     # example of parametrized test
     # {'keywords': <NodeKeywords for node <Function test_params[1-5-6]>>,
     # 'own_markers': [Mark(name='parametrize', args=('a,b,c', [(1, 2, 3), (1, 5, 6)]), kwargs={})],
@@ -401,3 +391,22 @@ def parse_pytest_item(testcase: pytest.Function) -> TestNameList:
     # 'b': [<FixtureDef argname='b' scope='function' baseid=''>],
     # 'c': [<FixtureDef argname='c' scope='function' baseid=''>]}),
     #  'fixturenames': ['a', 'b', 'c'], 'funcargs': {}, '_request': <FixtureRequest for <Function test_params[1-5-6]>>}
+
+
+def parse_nodeid(nodeid: str) -> PytestTestPath:
+    """
+    Expect nodeid to be in the format of: "tests/test_b.py::T::m[2-3-4]"
+    """
+    testpaths = nodeid.split("::")
+
+    class_name, parameters = None, None
+    if len(testpaths) == 3:
+        file, class_name, testcase = testpaths
+    if len(testpaths) == 2:
+        file, testcase = testpaths
+
+    blacket_index = testcase.find("[")
+    if blacket_index != -1:
+        testcase, parameters = testcase[:blacket_index], testcase[blacket_index:]
+
+    return PytestTestPath(file, class_name, testcase, parameters)
