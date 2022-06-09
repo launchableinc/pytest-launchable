@@ -138,7 +138,6 @@ class LaunchableTestCase:
         self.function_name_and_parameters = self.function_name
         # then 'function_name[0-1]' style
         self.function_name_and_parameters = test_path.fuction_parameters
-        print(self.function_name_and_parameters)
         # this is set after calling subset service
         self.launchable_subset_category = "unknown"
 
