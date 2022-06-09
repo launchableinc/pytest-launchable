@@ -234,7 +234,7 @@ def pytest_addoption(parser):
                     action="store",
                     dest="launchable_conf_path",
                     metavar="",
-                    default="launchable.conf",
+                    default=".launchable-config.yml",
                     help="path of launchable test configuration file")
 
 
