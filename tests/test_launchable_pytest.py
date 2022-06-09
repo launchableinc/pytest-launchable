@@ -1,6 +1,6 @@
 from typing import Callable
 import pytest
-from pytest_launchable.conftest import PytestTestPath, init_launchable_test_context, parse_pytest_item
+from pytest_launchable.launchable_test_context import PytestTestPath, init_launchable_test_context, parse_pytest_item
 
 
 def f():
