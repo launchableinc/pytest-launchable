@@ -19,8 +19,8 @@ class PseudoPytest:
     """make pseudo pytest item"""
 
     def __init__(self, file: str, name: str, func_or_method: Callable, parameters: str = None):
-        class_name = func_or_method.__self__.__class__.__name__ if hasattr( # type: ignore
-            func_or_method, "__self__") else None 
+        class_name = func_or_method.__self__.__class__.__name__ if hasattr(  # type: ignore
+            func_or_method, "__self__") else None
         function = name + f'[{parameters}]' if parameters else name
         self.keywords = [file]
         self.nodeid = "::".join(
