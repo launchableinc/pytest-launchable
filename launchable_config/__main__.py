@@ -8,7 +8,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description='generate/verify launchable test runner configuration file')
     parser.add_argument('--file', dest="file",
-                        default=".launchable-config.yml", help='configuration file name')
+                        default=".launchable.d/config.yml", help='configuration file name')
     parser.add_argument('--create', action="store_true",
                         help='create new configuration file by standard settings')
     parser.add_argument('--verify', action="store_true",

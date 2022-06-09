@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import subprocess
 from typing import Callable, Optional, Tuple, Union
 
@@ -71,7 +72,9 @@ class CLIArgs:
         writer.end_object()
 
     def write_as_yaml(self, path: str):
-        with open(path, 'w') as s:
+        p = Path(path).resolve()
+        p.parents[0].mkdir(parents=True, exist_ok=True)
+        with p.open('w') as s:
             self.write_to(YamlWriter(s))
 
     # read value from dictionary and verify the content.
