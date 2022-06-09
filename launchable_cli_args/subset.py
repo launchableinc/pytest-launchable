@@ -1,29 +1,32 @@
 from functools import reduce
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, Optional, Tuple, Union
 if TYPE_CHECKING:
     from launchable_cli_args.cli_args import CLIArgs
 from launchable_cli_args.error_counter import ErrorCounter
 
 from yaml2obj.writer import YamlWriter
 
+Commands = Tuple[Optional[Union[str, int]], ...]
+
 
 class SubsetArgs:
     REST_FILE_NAME = "launchable_rest_file.txt"
 
-    def __init__(self, parent):
+    def __init__(self, parent: "CLIArgs"):
         self.parent = parent
 
     def fill_and_validate(self, data: dict, error_counter: ErrorCounter):
         if data is None:
             error_counter.record("subset section is empty")
         else:
-            self.mode = data.get("mode", "subset")
+            self.mode: Literal["subset", "subset_and_rest",
+                               "record_only"] = data.get("mode", "subset")
             if not self.mode in ["subset", "subset_and_rest", "record_only"]:
                 error_counter.record(
                     "'mode' must be subset, subset_and_rest, or record_only")
-            self.target = data.get("target", None)
-            self.confidence = data.get("confidence", None)
-            self.time = data.get("time", None)
+            self.target: Optional[str] = data.get("target", None)
+            self.confidence: Optional[int] = data.get("confidence", None)
+            self.time: Optional[int] = data.get("time", None)
             if reduce(lambda a, e: a if e is None else a+1, [self.target, self.confidence, self.time], 0) != 1:
                 error_counter.record(
                     "one of target/confidence/time must be specified")
@@ -46,11 +49,12 @@ class SubsetArgs:
         if getattr(self, "time", None) is not None:
             writer.name("time").value(self.time)
 
-    def to_command(self):
+    def to_command(self) -> Commands:
         if self.mode == "record_only":
             return ()  # subset command is not applicable
         else:
-            a = ("launchable", "subset", "--build", self.parent.eval_build_id())
+            a: Commands = ("launchable", "subset", "--build",
+                           self.parent.eval_build_id())
             if getattr(self, "target", None) is not None:
                 a += ("--target", self.target)
             if getattr(self, "confidence", None) is not None:

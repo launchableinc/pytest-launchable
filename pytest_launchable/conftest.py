@@ -42,7 +42,7 @@ class LaunchableTestContext:
 
         return self.get_node_from_path(file).find_test_case(klass, testcase) if file and testcase else None
 
-    def set_subset_command_request(self, command, input_files: List[str]) -> None:
+    def set_subset_command_request(self, command: Tuple[str], input_files: List[str]) -> None:
         self.subset_command = command
         self.subset_input = input_files
 
@@ -74,7 +74,7 @@ class LaunchableTestContext:
         array: List = []
         for node in self.test_node_list:
             node.collect_junit_element(array)
-        launchable_extra = {'launchable_subset_command': " ".join(self.subset_command),  # command is tuple
+        launchable_extra = {'launchable_subset_command': " ".join(self.subset_command),
                             'launchable_subset_input': ",".join(self.subset_input),
                             'launchable_raw_subset_response': self.raw_subset.replace("\r\n", ",")}
         if self.raw_rest is not None:
@@ -127,9 +127,9 @@ class LaunchableTestCase:
         self.parent_node = parent_node
         self.pytest_item = pytest_item  # in unit test, this may be None
         self.test_name_tuple = test_name_tuple
-        self.class_name: Optional[str] = test_name_tuple[0]  # optional
+        self.class_name: Optional[str] = test_name_tuple[0]
         self.function_name = test_name_tuple[1]  # mandatory
-        self.parameters: Optional[str] = test_name_tuple[2]  # optional
+        self.parameters: Optional[str] = test_name_tuple[2]
         self.function_name_and_parameters = self.function_name
         if self.parameters is not None:
             # then 'function_name[0-1]' style
@@ -148,7 +148,7 @@ class LaunchableTestCase:
     def short_str(self) -> str:
         return "file=%s class=%s testcase=%s params=%s" % (self.parent_node.path, self.class_name, self.function_name, self.parameters)
 
-    def set_result(self, pytest_result: pytest.TestReport):
+    def set_result(self, pytest_result: "pytest.TestReport"):
         if pytest_result.when == "setup":
             self.setup_result = pytest_result
         elif pytest_result.when == "teardown":
@@ -337,7 +337,7 @@ def pytest_collection_modifyitems(config, items: List[pytest.Function]) -> None:
 # this is called 3 times (setup/call/teardown) for each test case.
 
 
-def pytest_runtest_logreport(report: pytest.TestReport) -> None:
+def pytest_runtest_logreport(report: "pytest.TestReport") -> None:
     if lc is None or not lc.enabled:
         return
     # sample of nodeid: 'calc_example/math/test_mul.py::TestMul::test_mul_int1'

@@ -1,6 +1,6 @@
 import os
 import subprocess
-from typing import Callable
+from typing import Callable, Optional
 
 from yaml2obj.loader import YamlLoaderWithLineNumber
 from yaml2obj.writer import YamlWriter
@@ -29,7 +29,7 @@ class CLIArgs:
         if self.launchable_token is None:
             self.error_counter.record(
                 "environment variable LAUNCHABLE_TOKEN is not defined. please set it to enable Launchable features.")
-        self.build_id = data.get("build-id", None)
+        self.build_id: Optional[str] = data.get("build-id", None)
         self.cached_build_id = None
         if self.build_id is None:
             self.error_counter.record("build_id is not specified")
@@ -145,7 +145,7 @@ class CLIArgs:
 # get build id from commit hash
 
 
-def git_rev_parse(dir):
+def git_rev_parse(dir: str) -> str:
     h = subprocess.run(("git", "rev-parse", "--short", "HEAD"),
                        cwd=dir, stdout=subprocess.PIPE, text=True).stdout
     print("launchable build id is configured by commit hash: %s" % (h))
