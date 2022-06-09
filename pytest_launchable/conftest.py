@@ -33,14 +33,14 @@ class LaunchableTestContext:
         return node
 
     def find_testcase_from_testpath(self, testpath: str) -> "LaunchableTestCase":
-        @memorizer
-        def testpath_re():
-            return re.compile("file=(?P<file>([^#]+))(#class=(?P<class>([^#]+)))?#testcase=(?P<testcase>(.+))$")
-        m = testpath_re().search(testpath)
-        e = m.groupdict()
+        testpaths = testpath.split("::")
+        file, klass, testcase = None, None, None
+        if len(testpaths) == 3:
+            file, klass, testcase = testpaths
+        if len(testpaths) == 2:
+            file, testcase = testpaths
 
-        # class is optional
-        return self.get_node_from_path(e["file"]).find_test_case(e.get("class"), e["testcase"])
+        return self.get_node_from_path(file).find_test_case(klass, testcase) if file and testcase else None
 
     def set_subset_command_request(self, command, input_files: List[str]) -> None:
         self.subset_command = command
@@ -98,7 +98,7 @@ class LaunchableTestNode:
     def short_str(self):
         return ",".join(map(lambda c: c.short_str(), self.case_list))
 
-    def find_test_case(self, class_name: str, function_name_and_parameters: str):
+    def find_test_case(self, class_name: Optional[str], function_name_and_parameters: str):
         for testcase in self.case_list:
             if testcase.class_name == class_name and testcase.function_name_and_parameters == function_name_and_parameters:
                 return testcase
@@ -139,16 +139,16 @@ class LaunchableTestCase:
 
     def collect_testpath_list(self, array: List[str]):
         if self.class_name is None:
-            array.append("file=%s#testcase=%s" % (
-                self.parent_node.path, self.function_name_and_parameters))
+            array.append(
+                "::".join((self.parent_node.path, self.function_name_and_parameters)))
         else:
-            array.append("file=%s#class=%s#testcase=%s" % (
-                self.parent_node.path, self.class_name, self.function_name_and_parameters))
+            array.append("::".join(
+                (self.parent_node.path, self.class_name, self.function_name_and_parameters)))
 
     def short_str(self) -> str:
         return "file=%s class=%s testcase=%s params=%s" % (self.parent_node.path, self.class_name, self.function_name, self.parameters)
 
-    def set_result(self, pytest_result):
+    def set_result(self, pytest_result: pytest.TestReport):
         if pytest_result.when == "setup":
             self.setup_result = pytest_result
         elif pytest_result.when == "teardown":
@@ -156,7 +156,7 @@ class LaunchableTestCase:
         elif pytest_result.when == "call":
             self.call_result = pytest_result
         else:
-            raise("unexpected 'when' %s" % pytest_result.when)
+            raise Exception("unexpected 'when' %s" % pytest_result.when)
 
     def collect_junit_element(self, array: List) -> None:
         if not hasattr(self, "call_result"):
@@ -181,10 +181,11 @@ class LaunchableTestCase:
         if self.call_result.outcome == 'failed':
             message = ""
             # copied from junit formatter of pytest
-            if hasattr(self.call_result.longrepr, "reprcrash"):
-                message = self.call_result.longrepr.reprcrash.message
+            longrepr = self.call_result.longrepr
+            if hasattr(longrepr, "reprcrash"):
+                message = longrepr.reprcrash.message  # type: ignore
             content = E.failure(
-                str(self.call_result.longrepr), message=message)
+                str(longrepr), message=message)
         array.append(E.testcase(content,
                                 classname=output_classname,
                                 name=output_function_name,
@@ -210,22 +211,11 @@ def read_test_path_list_file(filename: str) -> List[str]:
         return [line.rstrip() for line in lines]
 
 
-def format_test_path_line(line: str) -> str:
-    """modify curious Launchable CLI output"""
-    d = line.index("::")
-    return line if d == -1 else line[0:d]
-
-
 def format_test_path_list(input: Union[List, str]) -> List[str]:
     # avoid "file::file" case. it seems to be a bug of subset command
     if not isinstance(input, list):  # both of list/string are capable
         input = input.split("\n")
-    r = []
-    for e in input:
-        e = e.strip()
-        if len(e) > 0:
-            r.append(format_test_path_line(e))
-    return r
+    return list(filter(lambda e: len(e) > 0, [e.strip() for e in input]))
 
 
 def pytest_addoption(parser):
@@ -347,8 +337,8 @@ def pytest_collection_modifyitems(config, items: List[pytest.Function]) -> None:
 # this is called 3 times (setup/call/teardown) for each test case.
 
 
-def pytest_runtest_logreport(report):
-    if not lc.enabled:
+def pytest_runtest_logreport(report: pytest.TestReport) -> None:
+    if lc is None or not lc.enabled:
         return
     # sample of nodeid: 'calc_example/math/test_mul.py::TestMul::test_mul_int1'
     ids = report.nodeid.split("::")
