@@ -1,5 +1,5 @@
 from functools import reduce
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Optional
 from launchable_cli_args.error_counter import ErrorCounter
 from yaml2obj.writer import YamlWriter
 
@@ -17,8 +17,7 @@ class SubsetArgs:
         if data is None:
             error_counter.record("subset section is empty")
         else:
-            self.mode: Literal["subset", "subset_and_rest",
-                               "record_only"] = data.get("mode", "subset")
+            self.mode: str = data.get("mode", "subset")
             if not self.mode in ["subset", "subset_and_rest", "record_only"]:
                 error_counter.record(
                     "'mode' must be subset, subset_and_rest, or record_only")
