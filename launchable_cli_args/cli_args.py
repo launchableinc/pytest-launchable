@@ -30,7 +30,7 @@ class CLIArgs:
         if self.launchable_token is None:
             self.error_counter.record(
                 "environment variable LAUNCHABLE_TOKEN is not defined. please set it to enable Launchable features.")
-        self.build_id: Optional[str] = data.get("build-id", None)
+        self.build_id: Optional[str] = data.get("build-name", None)
         self.cached_build_id = None
         if self.build_id is None:
             self.error_counter.record("build_id is not specified")
@@ -53,7 +53,7 @@ class CLIArgs:
         writer.comment(" ")
 
         writer.name("schema-version").value("1.0")
-        writer.name("build-id").value(self.build_id)
+        writer.name("build-name").value(self.build_id)
 
         writer.name("record-build").begin_object()
         self.record_build.write_to(writer)
