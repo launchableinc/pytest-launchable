@@ -304,7 +304,7 @@ def pytest_collection_modifyitems(config, items: List[pytest.Function]) -> None:
     lc.set_subset_command_request(subset_command, testpath_list)
     raw_subset_result = subprocess.run(subset_command, input="\r\n".join(
         testpath_list), stdout=subprocess.PIPE, text=True)
-    if cli.subset.mode == "subset_and_rest":
+    if cli.subset.mode == "subset-and-rest":
         lc.set_subset_command_response(
             raw_subset_result.stdout, cli.subset.REST_FILE_NAME)
     else:

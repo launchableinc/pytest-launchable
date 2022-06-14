@@ -17,10 +17,10 @@ class SubsetArgs:
         if data is None:
             error_counter.record("subset section is empty")
         else:
-            self.mode: str = data.get("mode", "record_only")
-            if not self.mode in ["subset", "subset_and_rest", "record_only"]:
+            self.mode: str = data.get("mode", "record-only")
+            if not self.mode in ["subset", "subset-and-rest", "record-only"]:
                 error_counter.record(
-                    "'mode' must be subset, subset_and_rest, or record_only")
+                    "'mode' must be subset, subset-and-rest, or record-only")
             self.target: Optional[str] = data.get("target", None)
             self.confidence: Optional[int] = data.get("confidence", None)
             self.time: Optional[int] = data.get("time", None)
@@ -29,7 +29,7 @@ class SubsetArgs:
                     "one of target/confidence/time must be specified")
 
     def write_to(self, writer: YamlWriter):
-        writer.comment("mode is subset, subset_and_rest, or record_only")
+        writer.comment("mode is subset, subset-and-rest, or record-only")
         writer.name("mode").value(self.mode)
 
         writer.comment("you must specify one of target/confidence/time")
@@ -47,7 +47,7 @@ class SubsetArgs:
             writer.name("time").value(self.time)
 
     def to_command(self) -> "Commands":
-        if self.mode == "record_only":
+        if self.mode == "record-only":
             return ()  # subset command is not applicable
         else:
             a: "Commands" = ("launchable", "subset", "--build",
@@ -59,7 +59,7 @@ class SubsetArgs:
             if getattr(self, "time", None) is not None:
                 a += ("--time", self.time)
 
-            if self.mode == "subset_and_rest":
+            if self.mode == "subset-and-rest":
                 a += ("--rest", SubsetArgs.REST_FILE_NAME)
 
             a += ("pytest", )

@@ -26,11 +26,11 @@ def test_command() -> None:
     assert args.subset.to_command() == ("launchable", "subset", "--build",
                                         "XXX", "--target", "30%", "pytest")
 
-    # subset_and_rest mode
-    args.subset.mode = "subset_and_rest"
+    # subset-and-rest mode
+    args.subset.mode = "subset-and-rest"
     assert args.subset.to_command() == ("launchable", "subset", "--build", "XXX",
                                         "--target", "30%", "--rest", args.subset.REST_FILE_NAME, "pytest")
 
-    # record_only mode / skip subset service, record test command only
-    args.subset.mode = "record_only"
+    # record-only mode / skip subset service, record test command only
+    args.subset.mode = "record-only"
     assert args.subset.to_command() == ()
