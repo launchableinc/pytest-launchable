@@ -17,7 +17,7 @@ class SubsetArgs:
         if data is None:
             error_counter.record("subset section is empty")
         else:
-            self.mode: str = data.get("mode", "subset")
+            self.mode: str = data.get("mode", "record_only")
             if not self.mode in ["subset", "subset_and_rest", "record_only"]:
                 error_counter.record(
                     "'mode' must be subset, subset_and_rest, or record_only")
