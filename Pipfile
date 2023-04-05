@@ -7,14 +7,14 @@ name = "pypi"
 pytest-launchable = {editable = true, path = "."}
 
 [dev-packages]
-autopep8 = "*"
 pytest = ">= 4.2.0"
 mypy = "*"
-flake8 = "*"
 wheel = "*"
 setuptools = "*"
 setuptools-scm = "*"
 types-PyYAML = "*"
+flake8 = ">=5.0.4"
+autopep8 = "*"
 
 [requires]
 python_version = "3.7"
