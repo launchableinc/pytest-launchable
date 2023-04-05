@@ -32,7 +32,8 @@ class SubsetArgs:
         writer.comment("mode can be subset, subset-and-rest, or record-only")
         writer.name("mode").value(self.mode)
 
-        writer.comment("if mode is subset or subset-and-rest, you must specify one of target/confidence/time")
+        writer.comment(
+            "if mode is subset or subset-and-rest, you must specify one of target/confidence/time")
         writer.comment("examples:")
         writer.comment(
             "  target: 30%  # Create a variable time-based subset of the given percentage. (0%-100%)")
