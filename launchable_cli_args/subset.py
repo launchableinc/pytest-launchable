@@ -29,10 +29,10 @@ class SubsetArgs:
                     "one of target/confidence/time must be specified")
 
     def write_to(self, writer: YamlWriter):
-        writer.comment("mode is subset, subset-and-rest, or record-only")
+        writer.comment("mode can be subset, subset-and-rest, or record-only")
         writer.name("mode").value(self.mode)
 
-        writer.comment("you must specify one of target/confidence/time")
+        writer.comment("if mode is subset or subset-and-rest, you must specify one of target/confidence/time")
         writer.comment("examples:")
         writer.comment(
             "  target: 30%  # Create a variable time-based subset of the given percentage. (0%-100%)")
@@ -68,6 +68,6 @@ class SubsetArgs:
     @classmethod
     def auto_configure(cls, parent: 'CLIArgs', path: str) -> "SubsetArgs":
         a = SubsetArgs(parent)
-        a.target = "30%"
-        a.mode = "subset"
+        a.mode = "record-only"
+        a.confidence = 99
         return a

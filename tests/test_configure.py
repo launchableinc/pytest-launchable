@@ -20,17 +20,18 @@ def test_command() -> None:
     args = CLIArgs.auto_configure("tests")
     args.build_id = "XXX"  # manually configured build id
 
-    # at the present, test only subset mode command.
+    # at present, test only subset mode command.
 
-    # default is subset mode
+    # record-only mode (default) / skip subset service, record test command only
+    args.subset.mode = "record-only"
+    assert args.subset.to_command() == ()
+
+    # subset mode
+    args.subset.mode = "subset"
     assert args.subset.to_command() == ("launchable", "subset", "--build",
-                                        "XXX", "--target", "30%", "pytest")
+                                        "XXX", "--confidence", 99, "pytest")
 
     # subset-and-rest mode
     args.subset.mode = "subset-and-rest"
     assert args.subset.to_command() == ("launchable", "subset", "--build", "XXX",
-                                        "--target", "30%", "--rest", args.subset.REST_FILE_NAME, "pytest")
-
-    # record-only mode / skip subset service, record test command only
-    args.subset.mode = "record-only"
-    assert args.subset.to_command() == ()
+                                        "--confidence", 99, "--rest", args.subset.REST_FILE_NAME, "pytest")
