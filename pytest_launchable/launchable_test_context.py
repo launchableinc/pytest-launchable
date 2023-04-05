@@ -271,7 +271,7 @@ def init_launchable_test_context(items: List[pytest.Function]) -> "LaunchableTes
 
 # called for each test file... this hook can be used to collect full path of tests
 # def pytest_collect_file(path):
-#	print("collect_file path=%s testcasecount=%d" % (path, len(lc.test_node_list))) # 'path' is full path
+# print("collect_file path=%s testcasecount=%d" % (path, len(lc.test_node_list))) # 'path' is full path
 
 # this hook receives test case list
 # we get a chance of reordering or subsetting at this point
@@ -309,9 +309,9 @@ def pytest_collection_modifyitems(config, items: List[pytest.Function]) -> None:
             raw_subset_result.stdout, cli.subset.REST_FILE_NAME)
     else:
         lc.set_subset_command_response(raw_subset_result.stdout)
-    #print("input_file_list=" + str(file_list))
-    #print("output_file_list=" + str(lc.subset_list))
-    #print("all collected names " + str(lc.to_name_tuple_list()))
+    # print("input_file_list=" + str(file_list))
+    # print("output_file_list=" + str(lc.subset_list))
+    # print("all collected names " + str(lc.to_name_tuple_list()))
 
     # find testcase , mark category name, and return pytest object
     def find_and_mark(nodeid: str, category: str):

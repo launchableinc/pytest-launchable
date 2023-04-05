@@ -2,7 +2,7 @@ import io
 from yaml2obj.loader import YamlLoaderWithLineNumber
 from yaml2obj.writer import YamlWriter
 
-#　Write YAML and read it with line numbers
+# 　Write YAML and read it with line numbers
 
 
 def test_yaml_read_write():
@@ -15,7 +15,7 @@ def test_yaml_read_write():
 
 
 # expected yaml
-#key0: value0
+# key0: value0
 # key1:
 #  key11: value11
 

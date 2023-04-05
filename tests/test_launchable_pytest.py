@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Optional, Callable
 import pytest
 from pytest_launchable.launchable_test_context import PytestTestPath, init_launchable_test_context, parse_pytest_item
 
@@ -18,7 +18,7 @@ class T:
 class PseudoPytest:
     """make pseudo pytest item"""
 
-    def __init__(self, file: str, name: str, func_or_method: Callable, parameters: str = None):
+    def __init__(self, file: str, name: str, func_or_method: Callable, parameters: Optional[str] = None):
         class_name = func_or_method.__self__.__class__.__name__ if hasattr(  # type: ignore
             func_or_method, "__self__") else None
         function = name + f'[{parameters}]' if parameters else name
