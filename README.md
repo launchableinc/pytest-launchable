@@ -1,3 +1,7 @@
+# Usage
+
+For usage instructions, see [https://www.launchableinc.com/docs/resources/integrations/pytest/](https://www.launchableinc.com/docs/resources/integrations/pytest/)
+
 # Development
 We recommend Pipenv
 ```shell
